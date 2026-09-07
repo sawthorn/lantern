@@ -1,0 +1,64 @@
+{{ define "tracklist_entry" }}
+<div
+    class="
+        tracklist-entry
+        group
+        grid
+        grid-cols-1
+        md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]
+        gap-4
+        items-center
+        px-3 py-2
+        rounded-md
+        hover:bg-neutral-900
+        transition-colors
+        cursor-pointer
+    "
+    data-track-id="{{ .ID }}"
+    data-title="{{ .Title }}"
+    data-artist="{{ .Artist }}"
+    data-album-id="{{ .AlbumID }}"
+>
+    <div class="flex items-center gap-3 min-w-0">
+        <div
+            class="
+                w-10 h-10
+                shrink-0
+                overflow-hidden
+                rounded
+                bg-neutral-800
+            "
+        >
+            {{ if .AlbumID }}
+            <img
+                src="/api/cover/{{ .AlbumID }}"
+                alt=""
+                loading="lazy"
+                class="w-full h-full object-cover"
+            >
+            {{ end }}
+        </div>
+
+        <div class="min-w-0">
+            <div class="text-sm font-medium text-neutral-100 truncate">
+                {{ .Title }}
+            </div>
+
+            <div class="text-sm text-neutral-500 truncate">
+                {{ .Artist }}
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="
+            hidden md:block
+            min-w-0
+            text-sm text-neutral-500
+            truncate
+        "
+    >
+        {{ .Album }}
+    </div>
+</div>
+{{ end }}

@@ -15,15 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function updatePlayer(track) {
+    if (currentTrackElem) {
+        currentTrackElem.classList.remove("active-track")
+    }
+
     currentTrackElem = track
+    currentTrackElem.classList.add("active-track")
 
-    player.src = `/api/stream/${track.getAttribute("data-id")}`
-    playerTrackTitle.textContent = track.getAttribute("data-title")
-    playerTrackArtist.textContent = track.getAttribute("data-artist")
-    playerTrackArt.replaceChildren(getTrackCover(track.getAttribute("data-id")))
-
-    document.querySelectorAll('.albumTrackEntryWrapper').forEach(el => el.classList.remove("active"))
-    track.classList.add("active")
+    player.src = `/api/stream/${track.dataset.trackId}`
+    playerTrackTitle.textContent = track.dataset.title
+    playerTrackArtist.textContent = track.dataset.artist
+    playerTrackArt.replaceChildren(
+        getTrackCover(track.dataset.albumId)
+    )
 
     player.play()
 }
@@ -34,9 +38,6 @@ async function prevTrack() {
     const prevTrack = currentTrackElem.previousElementSibling;
     if (prevTrack) {
         updatePlayer(prevTrack)
-    } else {
-        currentTrackElem.classList.remove("active")
-        currentTrackElem = null;
     }
 }
 
@@ -46,9 +47,6 @@ async function nextTrack() {
     const nextTrack = currentTrackElem.nextElementSibling;
     if (nextTrack) {
         updatePlayer(nextTrack)
-    } else {
-        currentTrackElem.classList.remove("active")
-        currentTrackElem = null;
     }
 }
 

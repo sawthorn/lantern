@@ -101,14 +101,14 @@ btnMute.addEventListener('click', () => {
     iconMute.style.display = audio.muted ? 'block' : 'none';
 });
 
-// loop
-btnLoop.addEventListener('click', () => {
-    looping = !looping;
-    audio.loop = looping;
-    btnLoop.classList.toggle('active', looping);
-});
-
-// shuffle (visual only for single file)
-btnShuffle.addEventListener('click', () => {
-    btnShuffle.classList.toggle('active');
-});
+// // loop
+// btnLoop.addEventListener('click', () => {
+//     looping = !looping;
+//     audio.loop = looping;
+//     btnLoop.classList.toggle('active', looping);
+// });
+//
+// // shuffle (visual only for single file)
+// btnShuffle.addEventListener('click', () => {
+//     btnShuffle.classList.toggle('active');
+// });

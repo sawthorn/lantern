@@ -1,0 +1,51 @@
+{{ define "title" }}
+Tracks - Lantern
+{{ end }}
+
+{{ define "content" }}
+<div class="w-full flex justify-center px-4 sm:px-6 lg:px-8">
+    <div class="w-full max-w-5xl py-8">
+        <div class="mb-6">
+            <h1 class="text-3xl md:text-5xl font-bold">
+                Tracks
+            </h1>
+
+            <p class="mt-1 text-sm text-neutral-500">
+                {{ len . }} tracks
+            </p>
+        </div>
+
+        <div class="flex flex-col">
+            <div
+                class="
+                    hidden md:grid
+                    grid-cols-[minmax(0,2fr)_minmax(0,1fr)]
+                    gap-4
+                    px-3 py-2
+                    font-medium text-neutral-500
+                    border-b border-neutral-800
+                "
+            >
+                <div>Title</div>
+                <div>Album</div>
+            </div>
+
+
+            <!-- Tracks -->
+            <div id="tracklist" class="divide-y divide-neutral-800">
+                {{ range . }}
+                    {{ template "tracklist_entry" . }}
+                {{ else }}
+                    <div class="py-16 text-center text-neutral-500">
+                        No tracks found.
+                    </div>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<script type="module" src="/static/js/tracklist.js"></script>
+{{ end }}

@@ -15,26 +15,25 @@ import (
 func SetUpRouting(s *MusicServer) *http.ServeMux {
 	router := http.NewServeMux()
 
-	fs := http.FileServer(http.FS(s.staticFiles))
+	staticFileServer := http.FileServer(http.FS(s.staticFiles))
 	router.Handle(
 		"GET /static/",
-		http.StripPrefix("/static/", fs),
+		http.StripPrefix("/static/", staticFileServer),
 	)
-	router.HandleFunc("GET /{$}", s.handleHome)
-	router.HandleFunc("GET /tracks", s.handleTrackList)
-	router.HandleFunc("GET /albums", s.handleAlbumList)
-	router.HandleFunc("GET /api/stream/{id}", s.handleStream)
-	router.HandleFunc("GET /api/albums/{id}", s.handleAlbumByID)
-	router.HandleFunc("GET /api/tracks", s.handleTracks)
-	router.HandleFunc("GET /api/cover/{id}", s.handleCover)
-	router.HandleFunc("GET /api/albums", s.handleAlbums)
-	router.HandleFunc("GET /api/tracks/{id}/download", s.handleTrackDownload)
+	router.HandleFunc("GET /{$}", s.homePage)
+	router.HandleFunc("GET /tracks", s.tracksPage)
+	router.HandleFunc("GET /albums", s.albumsPage)
+	router.HandleFunc("GET /api/stream/{id}", s.streamTrackAPI)
+	router.HandleFunc("GET /api/albums/{id}", s.albumAPI)
+	router.HandleFunc("GET /api/tracks", s.tracksAPI)
+	router.HandleFunc("GET /api/cover/{id}", s.coverImage)
+	router.HandleFunc("GET /api/albums", s.albumsAPI)
+	router.HandleFunc("GET /api/tracks/{id}/download", s.downloadTrackAPI)
 	// router.HandleFunc("GET /api/search", s.handleSearch)
 
 	return router
 }
 
-func (s *MusicServer) handleHome(w http.ResponseWriter, r *http.Request) {
 	files := []string{
 		"base.html",
 		"nav.html",
@@ -48,6 +47,7 @@ func (s *MusicServer) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = tmpl.Execute(w, nil)
+func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		clog.Errorf("couldn't execute templates: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,7 +55,7 @@ func (s *MusicServer) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleStream(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		log.Errorf("handleStream: %s", err)
@@ -80,7 +80,7 @@ func (s *MusicServer) handleStream(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, track.FSInfo.Filename, track.FSInfo.ModTime, f)
 }
 
-func (s *MusicServer) handleTracks(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) tracksAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	tracks, err := s.repo.GetAllTracks()
@@ -96,7 +96,7 @@ func (s *MusicServer) handleTracks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleTrackList(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) tracksPage(w http.ResponseWriter, r *http.Request) {
 	files := []string{
 		"base.html",
 		"nav.html",
@@ -117,7 +117,7 @@ func (s *MusicServer) handleTrackList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleCover(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) coverImage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		log.Errorf("handleCover: %s", err)
@@ -134,7 +134,7 @@ func (s *MusicServer) handleCover(w http.ResponseWriter, r *http.Request) {
 	w.Write(cover.Data)
 }
 
-func (s *MusicServer) handleAlbums(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) albumsAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	albums, err := s.repo.GetAlbums()
@@ -150,7 +150,7 @@ func (s *MusicServer) handleAlbums(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleAlbumByID(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		log.Errorf("handleStream: %s", err)
@@ -177,7 +177,7 @@ func (s *MusicServer) handleAlbumByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleAlbumList(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) albumsPage(w http.ResponseWriter, r *http.Request) {
 	files := []string{
 		"base.html",
 		"nav.html",
@@ -198,7 +198,7 @@ func (s *MusicServer) handleAlbumList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *MusicServer) handleTrackDownload(w http.ResponseWriter, r *http.Request) {
+func (s *MusicServer) downloadTrackAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		log.Errorf("handleStream: %s", err)

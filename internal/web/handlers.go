@@ -8,9 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bibrikthesorcerer/lantern/internal/library"
-	"github.com/charmbracelet/log"
 	clog "github.com/charmbracelet/log"
+	"github.com/sawthorn/lantern/internal/library"
 )
 
 func SetUpRouting(s *MusicServer) *http.ServeMux {

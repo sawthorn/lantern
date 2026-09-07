@@ -11,6 +11,9 @@ import (
 	"github.com/bibrikthesorcerer/lantern/internal/library"
 	"github.com/bibrikthesorcerer/lantern/internal/web"
 	clog "github.com/charmbracelet/log"
+	"github.com/sawthorn/lantern/internal/config"
+	"github.com/sawthorn/lantern/internal/library"
+	"github.com/sawthorn/lantern/internal/web"
 )
 
 var musicDir string

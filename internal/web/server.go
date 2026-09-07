@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/bibrikthesorcerer/lantern/internal/config"
-	"github.com/bibrikthesorcerer/lantern/internal/library"
-	"github.com/bibrikthesorcerer/lantern/internal/web/middleware"
+	"github.com/sawthorn/lantern/internal/config"
+	"github.com/sawthorn/lantern/internal/library"
+	"github.com/sawthorn/lantern/internal/web/middleware"
 
 	clog "github.com/charmbracelet/log"
 )

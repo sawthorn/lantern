@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/bibrikthesorcerer/lantern/internal/config"
 	clog "github.com/charmbracelet/log"
+	"github.com/sawthorn/lantern/internal/config"
 	qrcode "github.com/skip2/go-qrcode"
 )
 

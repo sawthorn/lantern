@@ -22,6 +22,7 @@ func SetUpRouting(s *MusicServer) *http.ServeMux {
 	router.HandleFunc("GET /{$}", s.homePage)
 	router.HandleFunc("GET /tracks", s.tracksPage)
 	router.HandleFunc("GET /albums", s.albumsPage)
+	router.HandleFunc("GET /albums/{id}", s.albumPage)
 	router.HandleFunc("GET /api/stream/{id}", s.streamTrackAPI)
 	router.HandleFunc("GET /api/albums/{id}", s.albumAPI)
 	router.HandleFunc("GET /api/tracks", s.tracksAPI)
@@ -174,11 +175,24 @@ func (s *MusicServer) albumsPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *MusicServer) albumPage(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		clog.Errorf("album ID conversion: %s", err)
+		http.Error(w, "ID must be an integer", http.StatusBadRequest)
 		return
 	}
+
+	album, err := s.repo.GetAlbumByID(uint16(id))
+	if errors.Is(err, library.ErrAlbumNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = s.views.Render(w, "album", album)
 	if err != nil {
-		clog.Errorf("couldn't execute templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("render album: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 }

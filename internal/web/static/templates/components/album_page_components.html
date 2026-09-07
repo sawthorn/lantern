@@ -1,0 +1,167 @@
+{{/* Receives AlbumPageData. */}}
+{{define "album:header"}}
+<header class="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6 lg:gap-8">
+  <div class="w-40 shrink-0 self-center sm:w-48 sm:self-auto lg:w-64">
+    {{template "album:cover" .}}
+  </div>
+
+  <div class="min-w-0 w-full flex-1 text-center sm:text-left">
+    <p class="album-muted mb-2 text-xs font-medium uppercase tracking-widest sm:mb-3">
+      Album
+    </p>
+
+    <h1
+      id="album-title"
+      class="break-words text-2xl font-bold leading-tight sm:text-3xl lg:text-5xl"
+    >
+      {{.Title}}
+    </h1>
+
+    <p class="album-muted mt-2 break-words text-base leading-relaxed sm:mt-3 sm:text-lg lg:text-xl">
+      {{.AlbumArtist}}
+    </p>
+
+    <p class="album-muted mt-2 text-xs leading-relaxed sm:text-sm">
+      {{if .Year}}
+        {{.Year}}
+        <span class="mx-2" aria-hidden="true">·</span>
+      {{end}}
+
+      {{.TotalTracks}}
+      {{if eq .TotalTracks 1}}track{{else}}tracks{{end}}
+    </p>
+
+    <div class="mt-5 flex justify-center sm:mt-6 sm:justify-start text-(surface)">
+      <button
+        id="album-play-button"
+        class="album-play inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold sm:px-6 lg:text-base"
+        type="button"
+        {{if not .Tracks}}disabled{{end}}
+      >
+        {{template "icon:play" .}}
+        Play
+      </button>
+    </div>
+  </div>
+</header>
+{{end}}
+
+
+{{/* Receives Album. */}}
+{{define "album:cover"}}
+<div class="album-cover relative aspect-square overflow-hidden rounded-lg sm:rounded-xl">
+  <span
+    class="album-cover-placeholder absolute inset-0 flex items-center justify-center"
+    aria-hidden="true"
+  >
+    <svg
+      class="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.25"
+    >
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M6 12a6 6 0 0 1 6-6m6 6a6 6 0 0 1-6 6"/>
+    </svg>
+  </span>
+
+  <img
+    class="relative block h-full w-full object-cover"
+    data-album-cover
+    src="/api/cover/{{.ID}}"
+    alt="Cover of {{.Title}}"
+    width="512"
+    height="512"
+    decoding="async"
+  >
+</div>
+{{end}}
+
+
+{{/* Receives []TrackSummary in playback order. */}}
+{{define "album:tracklist"}}
+{{if .}}
+  <div id="tracklist" class="album-tracklist space-y-1 sm:space-y-2" role="list">
+    {{range .}}
+      {{template "album:track-row" .}}
+    {{end}}
+  </div>
+{{else}}
+  {{template "album:empty" .}}
+{{end}}
+{{end}}
+
+
+{{/* Receives TrackSummary. */}}
+{{define "album:track-row"}}
+<button
+  type="button"
+  class="tracklist-entry album-track w-full rounded-lg text-left"
+  data-track-id="{{.ID}}"
+  data-album-id="{{.AlbumID}}"
+  data-title="{{.Title}}"
+  data-artist="{{.Artist}}"
+  data-album="{{.Album}}"
+  data-track-num="{{.TrackNum}}"
+  aria-label="Play {{.Title}} by {{.Artist}}"
+>
+  <span
+    class="album-track-position relative flex items-center justify-center"
+    aria-hidden="true"
+  >
+    <span class="album-track-number font-mono text-xs sm:text-sm">
+      {{if .TrackNum}}{{.TrackNum}}{{else}}—{{end}}
+    </span>
+
+    <span class="album-track-play absolute inset-0 flex items-center justify-center text-(surface)">
+      {{template "icon:play" .}}
+    </span>
+  </span>
+
+  <span class="min-w-0">
+    <span
+      class="album-track-title block truncate text-sm font-medium leading-snug sm:text-base"
+      title="{{.Title}}"
+    >
+      {{.Title}}
+    </span>
+
+    <span
+      class="album-muted mt-1 block truncate text-xs leading-snug sm:text-sm"
+      title="{{.Artist}}"
+    >
+      {{.Artist}}
+    </span>
+  </span>
+
+</button>
+{{end}}
+
+
+{{define "album:empty"}}
+<div class="album-empty rounded-xl px-4 py-8 text-center sm:px-6 sm:py-12">
+  <p class="text-sm font-medium sm:text-base lg:text-lg">
+    No tracks available
+  </p>
+
+  <p class="album-muted mx-auto mt-2 max-w-sm text-xs leading-relaxed sm:text-sm">
+    This album has no playable tracks yet.
+  </p>
+</div>
+{{end}}
+
+
+{{define "icon:play"}}
+<svg
+  class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
+  width="16"
+  height="16"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+  fill="currentColor"
+>
+  <path d="M8 5.5v13l10-6.5z"/>
+</svg>
+{{end}}

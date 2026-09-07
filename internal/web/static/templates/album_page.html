@@ -1,0 +1,28 @@
+{{define "title"}}{{.Title}} — Lantern{{end}}
+
+{{ define "style" }}
+    <link rel="stylesheet" href="/static/css/album.css">
+{{ end }}
+
+{{define "content"}}
+<article class="album-page mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 sm:py-6" data-album-page data-album-id="{{.Album.ID}}" aria-labelledby="album-title">
+  <a class="album-back inline-flex items-center gap-2" href="/albums">
+    <span aria-hidden="true">←</span> Albums
+  </a>
+
+  {{template "album:header" .}}
+
+  <section class="mt-10 sm:mt-12" aria-labelledby="album-tracks-title">
+    <div class="mb-4 flex items-baseline justify-between gap-4">
+      <h2 id="album-tracks-title" class="text-lg md:text-2xl font-semibold">Tracks</h2>
+      <span class="album-muted">{{len .Tracks}} available</span>
+    </div>
+    {{template "album:tracklist" .Tracks}}
+  </section>
+</article>
+{{end}}
+
+{{ define "scripts" }}
+<script type="module" src="/static/js/album.js" defer></script>
+<script type="module" src="/static/js/tracklist.js" defer></script>
+{{ end }}

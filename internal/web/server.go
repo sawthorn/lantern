@@ -17,15 +17,23 @@ type MusicServer struct {
 	coverCache  *library.CoverCache
 	Conf        *config.Config
 	staticFiles fs.FS
+	views       *Views
 }
 
-func NewServer(repo *library.LibraryRepository, coverCache *library.CoverCache, c *config.Config, staticFiles fs.FS) (*MusicServer, error) {
+func NewServer(
+	repo *library.LibraryRepository,
+	coverCache *library.CoverCache,
+	c *config.Config,
+	staticFiles fs.FS,
+	views *Views,
+) *MusicServer {
 	return &MusicServer{
 		repo:        repo,
 		coverCache:  coverCache,
 		Conf:        c,
 		staticFiles: staticFiles,
-	}, nil
+		views:       views,
+	}
 }
 
 func (s *MusicServer) RunServer() error {

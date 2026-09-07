@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,23 +33,11 @@ func SetUpRouting(s *MusicServer) *http.ServeMux {
 	return router
 }
 
-	files := []string{
-		"base.html",
-		"nav.html",
-		"player.html",
-		"home.html",
-	}
-	tmpl, err := template.ParseFS(s.staticFiles, files...)
-	if err != nil {
-		clog.Errorf("couldn't parse templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, nil)
 func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
+	err := s.views.Render(w, "home", nil)
 	if err != nil {
-		clog.Errorf("couldn't execute templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("render home: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -58,22 +45,22 @@ func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
 func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		log.Errorf("handleStream: %s", err)
+		clog.Errorf("stream track: %s", err)
 		http.Error(w, "ID must be an integer", http.StatusBadRequest)
 		return
 	}
 
 	track, err := s.repo.GetTrackByID(uint16(id))
 	if err != nil {
-		log.Infof("404 Response for track #%d. %s", id, err)
+		clog.Infof("404 Response for track #%d. %s", id, err)
 		http.NotFound(w, r)
 		return
 	}
 
 	f, err := os.Open(track.FSInfo.Path)
 	if err != nil {
-		log.Errorf("handleStream: %s", err)
-		http.Error(w, "cannot open file", http.StatusInternalServerError)
+		clog.Errorf("file %q open fail: %s", track.FSInfo.Path, err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
 	defer f.Close()
 	w.Header().Set("Cache-Control", "no-cache")
@@ -86,33 +73,27 @@ func (s *MusicServer) tracksAPI(w http.ResponseWriter, r *http.Request) {
 	tracks, err := s.repo.GetAllTracks()
 	if err != nil {
 		clog.Errorf("get album list json: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	err = json.NewEncoder(w).Encode(tracks)
 	if err != nil {
-		log.Errorf("handleTracks: %s", err)
-		http.Error(w, "cannot serialize Tracks objects", http.StatusInternalServerError)
+		clog.Errorf("json encode fail: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
 }
 
 func (s *MusicServer) tracksPage(w http.ResponseWriter, r *http.Request) {
-	files := []string{
-		"base.html",
-		"nav.html",
-		"player.html",
-		"tracks_page.html",
-	}
-	tmpl, err := template.ParseFS(s.staticFiles, files...)
+	tracks, err := s.repo.GetAllTracks()
 	if err != nil {
-		clog.Errorf("couldn't parse templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("get track list json: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.Execute(w, nil)
+	err = s.views.Render(w, "tracks", tracks)
 	if err != nil {
-		clog.Errorf("couldn't execute templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("render tracks: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -120,7 +101,7 @@ func (s *MusicServer) tracksPage(w http.ResponseWriter, r *http.Request) {
 func (s *MusicServer) coverImage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		log.Errorf("handleCover: %s", err)
+		clog.Errorf("id conversion fail: %s", err)
 		http.Error(w, "ID must be an integer", http.StatusBadRequest)
 		return
 	}
@@ -140,20 +121,20 @@ func (s *MusicServer) albumsAPI(w http.ResponseWriter, r *http.Request) {
 	albums, err := s.repo.GetAlbums()
 	if err != nil {
 		clog.Errorf("get album list json: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	err = json.NewEncoder(w).Encode(albums)
 	if err != nil {
-		log.Errorf("handleAlbums: %s", err)
-		http.Error(w, "cannot serialize Album objects", http.StatusInternalServerError)
+		clog.Errorf("json encode fail: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
 }
 
 func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		log.Errorf("handleStream: %s", err)
+		clog.Errorf("incorrect id: %s", err)
 		http.Error(w, "ID must be an integer", http.StatusBadRequest)
 		return
 	}
@@ -164,33 +145,37 @@ func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		clog.Errorf("get album list json: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("album retrieve fail: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(albums)
 	if err != nil {
-		log.Errorf("handleAlbums: %s", err)
-		http.Error(w, "cannot serialize Album objects", http.StatusInternalServerError)
+		clog.Errorf("json encode fail: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
 }
 
 func (s *MusicServer) albumsPage(w http.ResponseWriter, r *http.Request) {
-	files := []string{
-		"base.html",
-		"nav.html",
-		"player.html",
-		"albums_page.html",
-	}
-	tmpl, err := template.ParseFS(s.staticFiles, files...)
+	albums, err := s.repo.GetAlbums()
 	if err != nil {
-		clog.Errorf("couldn't parse templates: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		clog.Errorf("get albums from repo fail: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.Execute(w, nil)
+
+	err = s.views.Render(w, "albums", albums)
+	if err != nil {
+		clog.Errorf("render albums: %s", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+		return
+	}
 	if err != nil {
 		clog.Errorf("couldn't execute templates: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -201,14 +186,14 @@ func (s *MusicServer) albumsPage(w http.ResponseWriter, r *http.Request) {
 func (s *MusicServer) downloadTrackAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		log.Errorf("handleStream: %s", err)
+		clog.Errorf("incorrect id: %s", err)
 		http.Error(w, "ID must be an integer", http.StatusBadRequest)
 		return
 	}
 
 	track, err := s.repo.GetTrackByID(uint16(id))
 	if err != nil {
-		log.Errorf("get track: %s", err)
+		clog.Errorf("get track: %s", err)
 		http.NotFound(w, r)
 		return
 	}

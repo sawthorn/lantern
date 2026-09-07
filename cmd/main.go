@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/fs"
 	"mime"
 	"os"
 
-	"github.com/bibrikthesorcerer/lantern/internal/config"
-	"github.com/bibrikthesorcerer/lantern/internal/library"
-	"github.com/bibrikthesorcerer/lantern/internal/web"
 	clog "github.com/charmbracelet/log"
 	"github.com/sawthorn/lantern/internal/config"
 	"github.com/sawthorn/lantern/internal/library"
 	"github.com/sawthorn/lantern/internal/web"
 )
 
-var musicDir string
-var port int
-var showConfig bool
+var (
+	musicDir   string
+	port       int
+	showConfig bool
+)
 
 func initParseCLIFlags() {
 	flag.StringVar(&musicDir, "dir", "", "Path to music directory")
@@ -88,11 +88,20 @@ func main() {
 		}()
 	}
 
-	// http setup
-	s, err := web.NewServer(libraryRepo, coverCache, conf, web.GetFS())
+	staticFS := web.GetFS()
+	templateFS, err := fs.Sub(staticFS, "templates")
 	if err != nil {
-		clog.Fatalf("NewServer setup fail: %s", err)
+		clog.Fatalf("template fs sub: %v", err)
 	}
+
+	// views setup
+	v, err := web.NewViews(templateFS)
+	if err != nil {
+		clog.Fatalf("view init error: %v", err)
+	}
+
+	// http setup
+	s := web.NewServer(libraryRepo, coverCache, conf, staticFS, v)
 
 	web.PrintAddrQr(*s.Conf)
 

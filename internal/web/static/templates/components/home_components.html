@@ -102,9 +102,11 @@
 <section class="hp-section" aria-labelledby="hp-tracks-title">
   <div class="hp-section-head"><h2 id="hp-tracks-title">Start anywhere</h2><a class="hp-link" href="/tracks">View all tracks</a></div>
   <div id="hp-tracks">
-    {{range $i, $track := .Tracks}}{{if lt $i 5}}
-    {{template "home:track-row" .}}
-    {{end}}{{else}}<p class="hp-empty">No tracks to play yet.</p>{{end}}
+    {{range $i, $track := .Tracks}}
+        {{template "home:track-row" .}}
+    {{else}}
+      <p class="hp-empty">No tracks to play yet.</p>
+    {{end}}
   </div>
 </section>
 {{end}}

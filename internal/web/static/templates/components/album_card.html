@@ -9,7 +9,7 @@
   <div class="overflow-hidden rounded-xl p-2 transition group-hover:bg-neutral-800">
     <div class="aspect-square w-full overflow-hidden rounded-xl">
       <img
-        src="/api/cover/{{ .ID }}"
+        src="/api/covers/{{ .ID }}"
         alt="{{ .Title }} cover"
         loading="lazy"
         class="
@@ -45,7 +45,7 @@
       <div class="mt-2 flex gap-2 text-xs text-neutral-500">
         <span>{{ .Year }}</span>
         <span>•</span>
-        <span>{{ .TotalTracks }} tracks</span>
+        <span>{{ .TotalTracks }} {{if eq .TotalTracks 1}}track{{else}}tracks{{end}}</span>
       </div>
     </div>
   </div>

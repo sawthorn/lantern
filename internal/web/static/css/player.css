@@ -2,91 +2,78 @@
       font-family: 'DM Mono', monospace;
     }
 
-    /* ── Progress bar ───────────────────────────────────── */
     .seek-wrap {
-      position: relative;
-      width: 100%;
-      height: 8px;
+        position: relative;
+        width: 100%;
+        height: 24px;
     }
 
     .seek-track {
-      position: absolute;
-      inset: 0;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+
+        height: 4px;
+        transform: translateY(-50%);
+
+        overflow: hidden;
+        background: var(--border);
+        border-radius: 2px;
+
+        transition: transform 0.15s;
     }
 
     .seek-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.1s linear;
-      pointer-events: none;
+        width: 0%;
+        height: 100%;
+
+        background: var(--accent);
+        border-radius: inherit;
+
+        pointer-events: none;
+        transition: width 0.1s linear;
     }
 
     .seek-input {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 80%;
-      opacity: 0;
-      cursor: pointer;
-      margin: 0;
-      padding: 0;
-    }
+        position: absolute;
+        inset: 0;
 
-    .seek-wrap:hover .seek-track {
-      transform: scaleY(1.5);
-      transition: transform 0.15s;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+
+        opacity: 0;
+        cursor: pointer;
     }
 
     .seek-thumb {
-      position: absolute;
-      top: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
-      border-radius: 50%;
-      pointer-events: none;
-      transition: transform 0.15s;
+        position: absolute;
+        top: 50%;
+
+        width: 18px;
+        height: 18px;
+
+        background: var(--accent);
+        border-radius: 50%;
+
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.15s;
+        pointer-events: none;
     }
 
-    .seek-wrap:hover .seek-thumb {
-      transform: translate(-50%, -50%) scale(1);
+    .seek-wrap:hover .seek-track,
+    .seek-wrap:focus-within .seek-track {
+        transform: translateY(-50%) scaleY(1.5);
     }
 
-    /* ── Volume range ───────────────────────────────────── */
-    /* input[type="range"].vol {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
+    .seek-wrap:hover .seek-thumb,
+    .seek-wrap:focus-within .seek-thumb {
+        transform: translate(-50%, -50%) scale(1);
     }
-    input[type="range"].vol::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    input[type="range"].vol::-webkit-slider-thumb:hover { transform: scale(1.3); }
-    input[type="range"].vol::-moz-range-thumb {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      cursor: pointer;
-    } */
-    .volume {
+
+   .volume {
       position: relative;
     }
 
@@ -173,7 +160,13 @@
       text-align: center;
     }
 
-    /* ── Buttons ─────────────────────────────────────────── */
+    .volume:hover .volume-popover,
+    .volume:focus-within .volume-popover {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) scale(1);
+    }
+
     .ctrl-btn {
       display: flex;
       align-items: center;
@@ -221,23 +214,125 @@
       transform: scale(0.93);
     }
 
-    /* ── Card ────────────────────────────────────────────── */
-    .player-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      width: 100%;
-      position: relative;
+    .player-shell {
+        position: fixed;
+        z-index: 50;
+        left: 0;
+        right: 0;
+        bottom: calc(1.25rem + env(safe-area-inset-bottom));
+
+        padding-inline: clamp(0.75rem, 3vw, 2rem);
+
+        pointer-events: none;
     }
 
-    /* .player-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 200px 120px at 80% -20%, rgba(245,158,11,0.06) 0%, transparent 70%);
-      pointer-events: none;
-    } */
-    /* ── Track art placeholder ─────────────────────────── */
+    .player-card {
+        --timeline-width: clamp(20rem, 38vw, 36rem);
+
+        display: grid;
+        grid-template-columns:
+            auto
+            minmax(0, 1fr)
+            var(--timeline-width)
+            auto;
+        grid-template-areas: "controls track timeline volume";
+
+        align-items: center;
+        gap: 1rem;
+
+        width: 100%;
+        max-width: 1440px;
+        margin-inline: auto;
+        padding: 1rem;
+
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+
+        pointer-events: auto;
+    }
+
+    .player-controls {
+        grid-area: controls;
+
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        flex-shrink: 0;
+    }
+
+    .player-track-info {
+        grid-area: track;
+
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        min-width: 0;
+    }
+
+    .player-track-copy {
+        min-width: 0;
+    }
+
+    #track-title,
+    #track-artist {
+        overflow: hidden;
+        margin: 0;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    #track-title {
+        color: var(--text);
+        font-size: 0.9375rem;
+        font-weight: 600;
+    }
+
+    #track-artist {
+        margin-top: 0.25rem;
+        color: var(--muted);
+        font-size: 0.8125rem;
+    }
+
+    .player-timeline {
+        grid-area: timeline;
+        width: var(--timeline-width);
+        min-width: 0;
+    }
+
+    .player-times {
+        display: flex;
+        justify-content: space-between;
+
+        color: var(--muted);
+        font-size: 0.75rem;
+    }
+
+    .player-volume {
+        grid-area: volume;
+        justify-self: end;
+    }
+
+   .track-art {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .track-art svg {
+      color: var(--muted);
+    }
+
     .track-art {
       width: 56px;
       height: 56px;
@@ -255,12 +350,58 @@
       color: var(--muted);
     }
 
-    /* ── Status dot ───────────────────────────────────────
-    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      animation: pulse-dot 1.2s ease-in-out infinite;
-    } */
+    /* -- Mobile -- */
+@media (max-width: 48rem) {
+    .player-shell {
+        bottom: calc(0.75rem + env(safe-area-inset-bottom));
+        padding-inline: 0.75rem;
+    }
+
+    .player-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "track controls"
+            "timeline timeline";
+
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 16px;
+    }
+
+    .player-timeline {
+        width: 100%;
+    }
+
+    .player-track-info {
+        gap: 0.625rem;
+    }
+
+    .track-art {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+    }
+
+    .play-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .player-controls {
+        gap: 0.5rem;
+    }
+
+    .player-volume {
+        display: none;
+    }
+}
+
+@media (hover: none) {
+    .seek-track {
+        height: 5px;
+    }
+
+    .seek-thumb {
+        transform: translate(-50%, -50%) scale(0.75);
+    }
+}

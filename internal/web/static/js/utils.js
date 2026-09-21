@@ -53,7 +53,7 @@ async function nextTrack() {
 
 function getTrackCover(id) {
     const img = document.createElement("img")
-    img.src = `/api/cover/${id}`
+    img.src = `/api/covers/${id}`
     return img
 }
 

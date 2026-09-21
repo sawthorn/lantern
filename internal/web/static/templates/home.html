@@ -1,0 +1,44 @@
+{{/*
+Optional window.lanternHome integration, configured by your player script:
+  searchAlbums(query, {signal}) => Promise<Array<{id, title, artist}>>
+  playAlbum(albumID) => void or Promise
+  playTrack(trackSummary) => void or Promise
+
+Without searchAlbums, search only filters Albums supplied to this view.
+playAlbum must be connected to make the featured Play album button work.
+For track clicks, use EITHER your existing .tracklist-entry listener OR
+playTrack. Installing both will trigger playback twice.
+
+For current-track styling, your player can dispatch:
+  document.getElementById('homepage')?.dispatchEvent(
+    new CustomEvent('lantern:track-changed', {detail: {id: currentTrackID}})
+  );
+Send the current state again when the home page is mounted. Use id: null to clear.
+An existing player that directly toggles .active-track also works.
+If using partial navigation, ensure the script runs after this fragment mounts.
+*/}}
+{{template "base" .}}
+
+{{define "title"}}Home - Lantern{{end}}
+
+{{define "content"}}
+<link rel="stylesheet" href="/static/css/home.css">
+
+<div class="homepage" id="homepage">
+  {{template "home:header" .}}
+  {{template "home:search" .}}
+
+  {{with .Featured}}
+    {{template "home:featured-album" .}}
+  {{end}}
+  <p class="hp-status" id="hp-player-status" role="status" aria-live="polite"></p>
+
+  {{template "home:explore" .}}
+  {{template "home:tracks" .}}
+  {{template "home:album-data" .Albums}}
+
+  <noscript><p class="hp-status">Enable JavaScript to search, shuffle picks, and use playback controls.</p></noscript>
+</div>
+
+<script src="/static/js/home.js" defer></script>
+{{end}}

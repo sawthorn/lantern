@@ -1,0 +1,130 @@
+{{define "home:header"}}
+<header class="hp-heading">
+  <h1>Your library</h1>
+  <p class="hp-counts hp-muted">{{.AlbumCount}} albums &middot; {{.TrackCount}} tracks</p>
+</header>
+{{end}}
+
+{{define "home:search"}}
+<div class="hp-search-anchor">
+  <form class="hp-search" id="hp-search" role="search">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.75"
+      aria-hidden="true"
+    >
+      <circle cx="10.5" cy="10.5" r="6.5"/>
+      <path d="m16 16 4.5 4.5"/>
+    </svg>
+
+    <label for="hp-query" class="hp-sr-only">
+      Search albums by title or artist
+    </label>
+
+    <input
+      id="hp-query"
+      type="search"
+      placeholder="Search albums or artists…"
+      autocomplete="off"
+      aria-controls="hp-results"
+    >
+
+    <button class="hp-clear" id="hp-clear" type="button" hidden>
+      Clear
+    </button>
+  </form>
+
+  <section
+    class="hp-search-results"
+    id="hp-results"
+    aria-labelledby="hp-results-title"
+    hidden
+  >
+    <div class="hp-search-results-head">
+      <h2 id="hp-results-title">Search results</h2>
+
+      <p
+        class="hp-status"
+        id="hp-search-status"
+        role="status"
+        aria-live="polite"
+      ></p>
+    </div>
+
+    <div class="hp-grid" id="hp-result-grid"></div>
+  </section>
+</div>
+{{end}}
+
+{{define "home:featured-album"}}
+<section class="hp-section hp-feature" aria-labelledby="hp-feature-title">
+  <a href="/albums/{{.ID}}" aria-label="Open {{.Title}}"><img class="hp-cover" src="/api/covers/{{.ID}}" alt="" width="480" height="480" fetchpriority="high"></a>
+  <div>
+    <p class="hp-kicker">Pick for today</p>
+    <h2 id="hp-feature-title">{{.Title}}</h2>
+    <p class="hp-feature-artist">{{.AlbumArtist}}</p>
+    <p class="hp-feature-meta">{{if .Year}}{{.Year}} &middot; {{end}}{{.TotalTracks}} {{if eq .TotalTracks 1}}track{{else}}tracks{{end}}</p>
+    <div class="hp-actions">
+      <button class="hp-button hp-primary" id="hp-play-album" type="button" data-album-id="{{.ID}}"><span aria-hidden="true">▶</span> Play album</button>
+      <a class="hp-link" href="/albums/{{.ID}}">Open album</a>
+    </div>
+  </div>
+</section>
+{{end}}
+
+{{define "home:explore"}}
+<section class="hp-section" aria-labelledby="hp-explore-title">
+  <div class="hp-section-head">
+    <h2 id="hp-explore-title">Explore your collection</h2>
+    <div class="hp-actions">
+      <a class="hp-link" href="/albums">View all albums</a>
+    </div>
+  </div>
+  <div class="hp-grid" id="hp-albums">
+    {{range $i, $album := .Albums}}{{if lt $i 6}}
+    {{template "home:album-card" .}}
+    {{end}}{{else}}<p class="hp-empty">Your collection is empty. Albums will appear here once you add music to Lantern.</p>{{end}}
+  </div>
+  <p class="hp-sr-only" id="hp-shuffle-status" role="status"></p>
+</section>
+{{end}}
+
+{{define "home:album-card"}}
+<a class="hp-album" href="/albums/{{.ID}}">
+  <img class="hp-cover" src="/api/covers/{{.ID}}" alt="" width="320" height="320" loading="lazy">
+  <h3 class="hp-album-title">{{.Title}}</h3><p class="hp-album-artist">{{.AlbumArtist}}</p>
+</a>
+{{end}}
+
+{{define "home:tracks"}}
+<section class="hp-section" aria-labelledby="hp-tracks-title">
+  <div class="hp-section-head"><h2 id="hp-tracks-title">Start anywhere</h2><a class="hp-link" href="/tracks">View all tracks</a></div>
+  <div id="hp-tracks">
+    {{range $i, $track := .Tracks}}{{if lt $i 5}}
+    {{template "home:track-row" .}}
+    {{end}}{{else}}<p class="hp-empty">No tracks to play yet.</p>{{end}}
+  </div>
+</section>
+{{end}}
+
+{{define "home:track-row"}}
+<button class="hp-track tracklist-entry" type="button"
+  data-track-id="{{.ID}}" data-title="{{.Title}}" data-artist="{{.Artist}}"
+  data-album="{{.Album}}" data-album-id="{{.AlbumID}}" aria-label="Play {{.Title}} by {{.Artist}}">
+  <img class="hp-cover" {{if .AlbumID}}src="/api/covers/{{.AlbumID}}"{{end}} alt="" width="44" height="44" loading="lazy">
+  <span class="hp-track-info"><span class="hp-track-title">{{.Title}}</span><span class="hp-track-artist">{{.Artist}}</span></span>
+  <span class="hp-track-album">{{.Album}}</span><span class="hp-play-icon" aria-hidden="true">▶</span>
+</button>
+{{end}}
+
+{{define "home:album-data"}}
+<template id="hp-album-data">
+  {{range .}}
+  <span data-id="{{.ID}}" data-title="{{.Title}}"
+        data-artist="{{.AlbumArtist}}" data-year="{{.Year}}"></span>
+  {{end}}
+</template>
+{{end}}
+

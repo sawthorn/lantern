@@ -259,90 +259,26 @@ func (r *LibraryRepository) GetAllTracks() ([]TrackSummary, error) {
 }
 
 func (r *LibraryRepository) ImportLibrary(rootPath string) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return fmt.Errorf("trasaction start: %w", err)
-	}
-	defer tx.Rollback()
-
-	err = createSchema(tx)
+	err := r.RunAsTx(createSchema)
 	if err != nil {
 		return fmt.Errorf("create schema: %w", err)
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO tracks (
-	title, artist, album, album_artist, track_num, year, album_id, mtime, size, path
-	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-	if err != nil {
-		return fmt.Errorf("prepare insert stmt: %w", err)
-	}
-
-	err = FullScan(rootPath, func(track Track) error {
-		albumID, created, err := getOrCreateAlbum(tx, track)
-		if err != nil {
-			return err
-		}
-
-		if created {
-			if err := r.coverCache.CacheAlbumCover(track.FSInfo.Path, albumID); err != nil {
-				clog.Warnf("cache album cover %s: %v", track.Metadata.Album, err)
-			}
-		}
-
-		track.Metadata.AlbumID = albumID
-
-		_, err = stmt.Exec(
-			track.Metadata.Title, track.Metadata.Artist,
-			track.Metadata.Album, track.Metadata.AlbumArtist,
-			track.Metadata.TrackNum, track.Metadata.Year,
-			track.Metadata.AlbumID,
-			track.FSInfo.ModTime.Unix(),
-			track.FSInfo.Size, track.FSInfo.Path,
-		)
-		return err
-	})
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return FullScan(rootPath, r.saveScannedTrack)
 }
 
 func (r *LibraryRepository) Sync(rootPath string) error {
-	return r.RunAsTx(func(tx *sql.Tx) error {
-		cachedTracks, err := getTracksFSInfo(tx)
-		if err != nil {
-			return err
-		}
+	cachedTracks, err := r.getTracksFSInfo()
+	if err != nil {
+		return err
+	}
 
-		deleteStmt, err := tx.Prepare(`
-			DELETE FROM tracks
-			WHERE path = ?
-		`)
-		if err != nil {
-			return err
-		}
-		defer deleteStmt.Close()
-
-		upsertStmt, err := tx.Prepare(upsertTrackSQL)
-		if err != nil {
-			return err
-		}
-		defer upsertStmt.Close()
-
-		return SyncScan(
-			rootPath,
-			cachedTracks,
-			func(t Track) error {
-				return execUpsertTrack(upsertStmt, t)
-			},
-
-			func(path string) error {
-				return execDeleteTrack(deleteStmt, path)
-			},
-		)
-	})
+	return SyncScan(
+		rootPath,
+		cachedTracks,
+		r.saveScannedTrack,
+		r.deleteTrackByPath,
+	)
 }
 
 func (r *LibraryRepository) RunAsTx(fn func(tx *sql.Tx) error) error {
@@ -360,10 +296,10 @@ func (r *LibraryRepository) RunAsTx(fn func(tx *sql.Tx) error) error {
 	return tx.Commit()
 }
 
-func getTracksFSInfo(tx *sql.Tx) ([]TrackFSInfo, error) {
+func (r *LibraryRepository) getTracksFSInfo() ([]TrackFSInfo, error) {
 	// Select a len of tracks and allocate slice cap
 	tracks := []TrackFSInfo{}
-	rows, err := tx.Query(`
+	rows, err := r.db.Query(`
 		SELECT path, mtime, size
 		FROM tracks
 	`)
@@ -392,20 +328,45 @@ func getTracksFSInfo(tx *sql.Tx) ([]TrackFSInfo, error) {
 	return tracks, nil
 }
 
-func execDeleteTrack(stmt *sql.Stmt, path string) error {
-	_, err := stmt.Exec(path)
-	return err
+func (r *LibraryRepository) saveScannedTrack(track Track) error {
+	var albumID uint16
+	var created bool
+	err := r.RunAsTx(func(tx *sql.Tx) error {
+		var err error
+		albumID, created, err = getOrCreateAlbum(tx, track)
+		if err != nil {
+			return err
+		}
+
+		track.Metadata.AlbumID = albumID
+
+		_, err = tx.Exec(upsertTrackSQL,
+			track.Metadata.Title, track.Metadata.Artist,
+			track.Metadata.Album, track.Metadata.AlbumArtist,
+			track.Metadata.TrackNum, track.Metadata.Year,
+			track.Metadata.AlbumID,
+			track.FSInfo.ModTime.Unix(),
+			track.FSInfo.Size, track.FSInfo.Path,
+		)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	if created {
+		if err := r.coverCache.CacheAlbumCover(
+			track.FSInfo.Path, albumID,
+		); err != nil {
+			clog.Warnf("cache album cover %s: %v", track.Metadata.Album, err)
+		}
+	}
+
+	return nil
 }
 
-func execUpsertTrack(stmt *sql.Stmt, track Track) error {
-	_, err := stmt.Exec(
-		track.Metadata.Title, track.Metadata.Artist,
-		track.Metadata.Album, track.Metadata.AlbumArtist,
-		track.Metadata.TrackNum, track.Metadata.Year,
-		track.Metadata.AlbumID,
-		track.FSInfo.ModTime.Unix(),
-		track.FSInfo.Size, track.FSInfo.Path,
-	)
+func (r *LibraryRepository) deleteTrackByPath(path string) error {
+	_, err := r.db.Exec(`DELETE FROM tracks WHERE path = ?`, path)
 	return err
 }
 

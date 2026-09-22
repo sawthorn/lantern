@@ -70,6 +70,8 @@ func SyncScan(dir string, cachedTracks []TrackFSInfo, upsertFn func(Track) error
 
 		cachedTrack, exists := cachedTracksMap[path]
 
+		delete(cachedTracksMap, path)
+
 		info, err := d.Info()
 		// dont care about err - file renamed or moved
 		// if renamed - will be upserted to repo as "new"
@@ -79,7 +81,7 @@ func SyncScan(dir string, cachedTracks []TrackFSInfo, upsertFn func(Track) error
 		}
 
 		if !exists ||
-			cachedTrack.ModTime != info.ModTime() ||
+			cachedTrack.ModTime.Unix() != info.ModTime().Unix() ||
 			cachedTrack.Size != info.Size() {
 
 			parsedTrack, err := parseTrack(path, d)
@@ -92,8 +94,6 @@ func SyncScan(dir string, cachedTracks []TrackFSInfo, upsertFn func(Track) error
 				return err
 			}
 		}
-
-		delete(cachedTracksMap, path)
 
 		return nil
 	})

@@ -27,21 +27,12 @@ func SetUpRouting(s *MusicServer) *http.ServeMux {
 	router.HandleFunc("GET /api/stream/{id}", s.streamTrackAPI)
 	router.HandleFunc("GET /api/albums/{id}", s.albumAPI)
 	router.HandleFunc("GET /api/tracks", s.tracksAPI)
-	router.HandleFunc("GET /api/cover/{id}", s.coverImage)
+	router.HandleFunc("GET /api/covers/{id}", s.coverImage)
 	router.HandleFunc("GET /api/albums", s.albumsAPI)
 	router.HandleFunc("GET /api/tracks/{id}/download", s.downloadTrackAPI)
 	router.HandleFunc("GET /api/search", s.searchAPI)
 
 	return router
-}
-
-func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
-	err := s.views.Render(w, "home", nil)
-	if err != nil {
-		clog.Errorf("render home: %s", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
 }
 
 func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {

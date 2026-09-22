@@ -12,3 +12,9 @@ type AlbumDetails struct {
 	Album
 	Tracks []TrackSummary `json:"tracks"`
 }
+
+type AlbumSummary struct {
+	ID          uint16 `json:"id"`
+	Title       string `json:"title"`
+	AlbumArtist string `json:"artist"`
+}

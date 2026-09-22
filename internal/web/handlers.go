@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	clog "github.com/charmbracelet/log"
 	"github.com/sawthorn/lantern/internal/library"
@@ -29,7 +30,7 @@ func SetUpRouting(s *MusicServer) *http.ServeMux {
 	router.HandleFunc("GET /api/cover/{id}", s.coverImage)
 	router.HandleFunc("GET /api/albums", s.albumsAPI)
 	router.HandleFunc("GET /api/tracks/{id}/download", s.downloadTrackAPI)
-	// router.HandleFunc("GET /api/search", s.handleSearch)
+	router.HandleFunc("GET /api/search", s.searchAPI)
 
 	return router
 }
@@ -216,13 +217,29 @@ func (s *MusicServer) downloadTrackAPI(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, track.FSInfo.Path)
 }
 
-// func (s *MusicServer) handleSearch(w http.ResponseWriter, r *http.Request) {
-// 	query := r.URL.Query().Get("q")
-// 	tracks := s.search(query)
+func (s *MusicServer) searchAPI(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		http.Error(w, "query parameter q is required", http.StatusBadRequest)
+		return
+	}
 
-// 	err := json.NewEncoder(w).Encode(tracks)
-// 	if err != nil {
-// 		log.Errorf("handleSearch: %s", err)
-// 		http.Error(w, "cannot serialize Tracks objects", http.StatusInternalServerError)
-// 	}
-// }
+	results, err := s.repo.Search(query)
+	if err != nil {
+		clog.Errorf("search library: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	body, err := json.Marshal(results)
+	if err != nil {
+		clog.Errorf("encode search results: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(body); err != nil {
+		clog.Errorf("write search response: %v", err)
+	}
+}

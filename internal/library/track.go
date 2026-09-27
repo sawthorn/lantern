@@ -44,3 +44,7 @@ type TrackSummary struct {
 	AlbumID  uint16 `json:"album_id,omitempty"`
 	TrackNum uint16 `json:"track"`
 }
+
+func (a TrackSummary) RankID() uint16 {
+	return a.ID
+}

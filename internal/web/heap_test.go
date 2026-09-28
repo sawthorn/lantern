@@ -67,14 +67,9 @@ func TestBSHeap_TopKCorrect(t *testing.T) {
 		bsh.add(item)
 	}
 
-	scoresInHeap := make([]uint64, 0, bsh.len())
-	for range bsh.len() {
-		top := bsh.pop()
-		scoresInHeap = append(scoresInHeap, top.score)
-	}
-
-	want := []uint64{2, 3, 7}
-	require.Subsetf(t, scoresInHeap, want, "top K scores: %v, want: %v", scoresInHeap, want)
+	got := bsh.sortedValues()
+	want := []int{2, 3, 7}
+	require.Subsetf(t, got, want, "top K: %v, want: %v", got, want)
 }
 
 func mockHeapItems[T any](count int) []scoredHeapItem[T] {

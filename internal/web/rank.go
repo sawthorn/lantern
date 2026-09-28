@@ -27,11 +27,5 @@ func rank[T Rankable](items []T, selectionSize int, today time.Time) []T {
 		topk.add(scoredHeapItem[T]{score: score, value: item})
 	}
 
-	ranked := make([]T, 0, selectionSize)
-	for range topk.len() {
-		elem := topk.pop()
-		ranked = append(ranked, elem.value)
-	}
-
-	return ranked
+	return topk.sortedValues()
 }

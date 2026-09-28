@@ -54,3 +54,13 @@ func (bsh *boundedScoredHeap[T]) pop() scoredHeapItem[T] {
 func (bsh *boundedScoredHeap[T]) len() int {
 	return len(bsh.items)
 }
+
+func (bsh *boundedScoredHeap[T]) sortedValues() []T {
+	size := bsh.len()
+	sl := make([]T, size)
+	for i := range size {
+		top := bsh.pop()
+		sl[size-1-i] = top.value
+	}
+	return sl
+}

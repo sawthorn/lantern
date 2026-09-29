@@ -33,7 +33,9 @@ func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
 	}
 	hpd.AlbumCount = len(albums)
 	albumPicks := rank(albums, homeAlbumSelectionSize, nowTimestamp)
-	hpd.Featured, hpd.Albums = &albumPicks[0], albumPicks[1:]
+	if albumPicks != nil {
+		hpd.Featured, hpd.Albums = &albumPicks[0], albumPicks[1:]
+	}
 
 	tracks, err := s.repo.GetAllTracks()
 	if err != nil {

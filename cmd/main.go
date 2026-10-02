@@ -63,7 +63,10 @@ func main() {
 	}
 
 	// init library
-	libraryRepo, err := library.NewLibraryRepository(conf.DBPath, coverCache)
+	libraryRepo, err := library.NewLibraryRepository(
+		library.WithDBPath(conf.DBPath),
+		library.WithCoverCache(coverCache),
+	)
 	if err != nil {
 		clog.Fatalf("library repo init failed: %v", err)
 	}

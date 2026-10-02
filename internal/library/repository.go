@@ -40,15 +40,52 @@ type LibraryRepository struct {
 	coverCache *CoverCache
 }
 
-func NewLibraryRepository(dbPath string, coverCache *CoverCache) (*LibraryRepository, error) {
-	var err error
-	r := LibraryRepository{dbPath: dbPath, coverCache: coverCache}
+type LibraryRepositoryOption func(*LibraryRepository)
+
+var errEmptyDBPath = errors.New("empty DB path")
+
+func NewLibraryRepository(opts ...LibraryRepositoryOption) (*LibraryRepository, error) {
+	defaultPath, err := defaultDBPath()
+	if err != nil {
+		return nil, fmt.Errorf("get default DB path: %w", err)
+	}
+	r := &LibraryRepository{dbPath: defaultPath, coverCache: nil}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	if r.dbPath == "" {
+		return nil, errEmptyDBPath
+	}
+
 	r.db, err = sql.Open("sqlite", r.dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open db connection: %w", err)
 	}
 
-	return &r, nil
+	return r, nil
+}
+
+func WithDBPath(path string) LibraryRepositoryOption {
+	return func(r *LibraryRepository) {
+		r.dbPath = path
+	}
+}
+
+func WithCoverCache(cc *CoverCache) LibraryRepositoryOption {
+	return func(r *LibraryRepository) {
+		r.coverCache = cc
+	}
+}
+
+func defaultDBPath() (string, error) {
+	cacheDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(cacheDir, ".local/share/lantern"), nil
 }
 
 func (r *LibraryRepository) NeedsImport() bool {

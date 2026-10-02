@@ -25,6 +25,8 @@ type CoverCacheOption func(*CoverCache)
 
 var errEmptyPath = errors.New("empty path")
 
+// NewCoverCache creates a CoverCache using the default cache directory.
+// Options can be provided to customize its configuration.
 func NewCoverCache(opts ...CoverCacheOption) (*CoverCache, error) {
 	defaultPath, err := defaultCacheDir()
 	if err != nil {
@@ -52,12 +54,14 @@ func NewCoverCache(opts ...CoverCacheOption) (*CoverCache, error) {
 	return cc, nil
 }
 
+// WithCachePath sets the directory where cached album covers are stored.
 func WithCachePath(path string) CoverCacheOption {
 	return func(cc *CoverCache) {
 		cc.cachePath = path
 	}
 }
 
+// WithCoverSize sets the image dimensions of cached album covers.
 func WithCoverSize(width, height uint) CoverCacheOption {
 	return func(cc *CoverCache) {
 		cc.coverW, cc.coverH = width, height
@@ -73,6 +77,8 @@ func defaultCacheDir() (string, error) {
 	return filepath.Join(cacheDir, "lantern"), nil
 }
 
+// CacheAlbumCover extracts the embedded album artwork from the audio file at path,
+// resizes it, and stores it in the cache under the given album ID.
 func (cc *CoverCache) CacheAlbumCover(path string, id uint16) error {
 	coverArt, err := taglib.ReadImage(path)
 	if err != nil {
@@ -95,6 +101,7 @@ func (cc *CoverCache) CacheAlbumCover(path string, id uint16) error {
 	return jpeg.Encode(thumbFile, resizedImg, nil)
 }
 
+// GetAlbumCover retrieves the cached album cover for the given album ID.
 func (cc *CoverCache) GetAlbumCover(id uint16) (*AlbumCover, error) {
 	thumbPath := filepath.Join(cc.cachePath, fmt.Sprintf("%d.jpg", id))
 	thumbFile, err := os.ReadFile(thumbPath)

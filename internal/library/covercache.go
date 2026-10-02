@@ -2,6 +2,7 @@ package library
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -16,33 +17,63 @@ import (
 
 type CoverCache struct {
 	cachePath string
+	coverW    uint
+	coverH    uint
 }
 
-func NewCoverCache() (*CoverCache, error) {
-	cachePath, err := ensureCacheDir()
+type CoverCacheOption func(*CoverCache)
+
+var errEmptyPath = errors.New("empty path")
+
+func NewCoverCache(opts ...CoverCacheOption) (*CoverCache, error) {
+	defaultPath, err := defaultCacheDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get default user cache dir: %w", err)
 	}
 
-	return &CoverCache{cachePath: cachePath}, nil
+	cc := &CoverCache{
+		coverW:    300,
+		coverH:    300,
+		cachePath: defaultPath,
+	}
+
+	for _, opt := range opts {
+		opt(cc)
+	}
+
+	if cc.cachePath == "" {
+		return nil, errEmptyPath
+	}
+
+	if err := os.MkdirAll(cc.cachePath, 0750); err != nil {
+		return nil, fmt.Errorf("create cover cache dir: %w", err)
+	}
+
+	return cc, nil
 }
 
-func ensureCacheDir() (string, error) {
+func WithCachePath(path string) CoverCacheOption {
+	return func(cc *CoverCache) {
+		cc.cachePath = path
+	}
+}
+
+func WithCoverSize(width, height uint) CoverCacheOption {
+	return func(cc *CoverCache) {
+		cc.coverW, cc.coverH = width, height
+	}
+}
+
+func defaultCacheDir() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
 
-	cacheDir = filepath.Join(cacheDir, "lantern")
-
-	if err := os.MkdirAll(cacheDir, 0750); err != nil {
-		return "", err
-	}
-
-	return cacheDir, nil
+	return filepath.Join(cacheDir, "lantern"), nil
 }
 
-func (r *CoverCache) CacheAlbumCover(path string, id uint16) error {
+func (cc *CoverCache) CacheAlbumCover(path string, id uint16) error {
 	coverArt, err := taglib.ReadImage(path)
 	if err != nil {
 		return fmt.Errorf("image read: %w", err)
@@ -52,9 +83,10 @@ func (r *CoverCache) CacheAlbumCover(path string, id uint16) error {
 	if err != nil {
 		return err
 	}
-	resizedImg := resize.Thumbnail(300, 300, img, resize.Lanczos3)
+	resizedImg := resize.Thumbnail(cc.coverW, cc.coverH, img, resize.Lanczos3)
 
-	thumbFile, err := os.Create(fmt.Sprintf("%s/%d.jpg", r.cachePath, id))
+	thumbPath := filepath.Join(cc.cachePath, fmt.Sprintf("%d.jpg", id))
+	thumbFile, err := os.Create(thumbPath)
 	if err != nil {
 		return fmt.Errorf("create thumbnail file: %w", err)
 	}
@@ -63,8 +95,9 @@ func (r *CoverCache) CacheAlbumCover(path string, id uint16) error {
 	return jpeg.Encode(thumbFile, resizedImg, nil)
 }
 
-func (r *CoverCache) GetAlbumCover(id uint16) (*AlbumCover, error) {
-	thumbFile, err := os.ReadFile(fmt.Sprintf("%s/%d.jpg", r.cachePath, id))
+func (cc *CoverCache) GetAlbumCover(id uint16) (*AlbumCover, error) {
+	thumbPath := filepath.Join(cc.cachePath, fmt.Sprintf("%d.jpg", id))
+	thumbFile, err := os.ReadFile(thumbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open thumbnail file: %w", err)
 	}

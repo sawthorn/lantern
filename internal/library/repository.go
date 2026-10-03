@@ -1,6 +1,7 @@
 package library
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -100,27 +101,28 @@ func (r *LibraryRepository) NeedsImport() bool {
 	return err != nil
 }
 
-func createSchema(tx *sql.Tx) error {
-	_, err := tx.Exec(`
+func (r *LibraryRepository) createSchema(ctx context.Context) error {
+	return r.RunAsTx(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `
 	CREATE TABLE IF NOT EXISTS albums(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		title TEXT,
 		album_artist TEXT
 	)
 	`)
-	if err != nil {
-		return fmt.Errorf("create albums table: %w", err)
-	}
+		if err != nil {
+			return fmt.Errorf("create albums table: %w", err)
+		}
 
-	_, err = tx.Exec(`
+		_, err = tx.ExecContext(ctx, `
 	CREATE UNIQUE INDEX idx_album_unique
 	ON albums(title, album_artist);
 	`)
-	if err != nil {
-		return fmt.Errorf("create unique albums index: %w", err)
-	}
+		if err != nil {
+			return fmt.Errorf("create unique albums index: %w", err)
+		}
 
-	_, err = tx.Exec(`
+		_, err = tx.ExecContext(ctx, `
 	CREATE TABLE IF NOT EXISTS tracks(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		title TEXT,
@@ -136,17 +138,18 @@ func createSchema(tx *sql.Tx) error {
 		FOREIGN KEY (album_id) REFERENCES albums(id)
 	)
 	`)
-	if err != nil {
-		return fmt.Errorf("create tracks table: %w", err)
-	}
+		if err != nil {
+			return fmt.Errorf("create tracks table: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }
 
-func (r *LibraryRepository) GetTrackByID(id uint16) (Track, error) {
+func (r *LibraryRepository) GetTrackByID(ctx context.Context, id uint16) (Track, error) {
 	res := Track{}
 	var mtime int64
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT
 			id, title,
 			artist, album,
@@ -175,9 +178,9 @@ func (r *LibraryRepository) GetTrackByID(id uint16) (Track, error) {
 	return res, nil
 }
 
-func (r *LibraryRepository) GetAlbums() ([]Album, error) {
+func (r *LibraryRepository) GetAlbums(ctx context.Context) ([]Album, error) {
 	albums := []Album{}
-	rows, err := r.db.Query(`
+	rows, err := r.db.QueryContext(ctx, `
 	SELECT
 		a.id, a.title,
 		a.album_artist,
@@ -194,6 +197,10 @@ func (r *LibraryRepository) GetAlbums() ([]Album, error) {
 	defer rows.Close()
 
 	for rows.Next() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		al := Album{}
 		err = rows.Scan(
 			&al.ID, &al.Title,
@@ -203,6 +210,7 @@ func (r *LibraryRepository) GetAlbums() ([]Album, error) {
 		if err != nil {
 			return nil, fmt.Errorf("row scan err: %w", err)
 		}
+
 		albums = append(albums, al)
 	}
 	if err := rows.Err(); err != nil {
@@ -212,15 +220,10 @@ func (r *LibraryRepository) GetAlbums() ([]Album, error) {
 	return albums, nil
 }
 
-func (r *LibraryRepository) GetAlbumByID(id uint16) (AlbumDetails, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return AlbumDetails{}, fmt.Errorf("transaction begin: %w", err)
-	}
-	defer tx.Rollback()
-
+func (r *LibraryRepository) GetAlbumByID(ctx context.Context, id uint16) (AlbumDetails, error) {
 	album := AlbumDetails{}
-	err = tx.QueryRow(`
+	err := r.RunAsTx(ctx, func(tx *sql.Tx) error {
+		err := tx.QueryRowContext(ctx, `
 		SELECT
 			a.id, a.title,
 			a.album_artist,
@@ -230,80 +233,92 @@ func (r *LibraryRepository) GetAlbumByID(id uint16) (AlbumDetails, error) {
 		LEFT JOIN tracks t ON a.id = t.album_id
 		WHERE a.id = ?
 	`, id).Scan(&album.ID, &album.Title, &album.AlbumArtist, &album.Year, &album.TotalTracks)
-	if errors.Is(err, sql.ErrNoRows) {
-		return AlbumDetails{}, ErrAlbumNotFound
-	}
-	if err != nil {
-		return AlbumDetails{}, fmt.Errorf("album query: %w", err)
-	}
-
-	fields := "id, title, artist, album, album_id, track_num"
-	q := fmt.Sprintf("SELECT %s FROM tracks WHERE album_id = ? ORDER BY track_num", fields)
-	rows, err := tx.Query(q, id)
-	if err != nil {
-		return AlbumDetails{}, fmt.Errorf("bulk select tracks: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		tr := TrackSummary{}
-		err = rows.Scan(
-			&tr.ID, &tr.Title,
-			&tr.Artist, &tr.Album,
-			&tr.AlbumID, &tr.TrackNum,
-		)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrAlbumNotFound
+		}
 		if err != nil {
-			return AlbumDetails{}, fmt.Errorf("row scan err: %w", err)
+			return fmt.Errorf("album query: %w", err)
 		}
 
-		album.Tracks = append(album.Tracks, tr)
-	}
-	if err := rows.Err(); err != nil {
-		return AlbumDetails{}, fmt.Errorf("row iteration err: %w", err)
-	}
+		fields := "id, title, artist, album, album_id, track_num"
+		q := fmt.Sprintf("SELECT %s FROM tracks WHERE album_id = ? ORDER BY track_num", fields)
+		rows, err := tx.QueryContext(ctx, q, id)
+		if err != nil {
+			return fmt.Errorf("bulk select tracks: %w", err)
+		}
+		defer rows.Close()
 
-	return album, tx.Commit()
+		for rows.Next() {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
+			tr := TrackSummary{}
+			err = rows.Scan(
+				&tr.ID, &tr.Title,
+				&tr.Artist, &tr.Album,
+				&tr.AlbumID, &tr.TrackNum,
+			)
+			if err != nil {
+				return fmt.Errorf("row scan err: %w", err)
+			}
+
+			album.Tracks = append(album.Tracks, tr)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("row iteration err: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return AlbumDetails{}, fmt.Errorf("get album: %w", err)
+	}
+	return album, nil
 }
 
-func (r *LibraryRepository) GetAllTracks() ([]TrackSummary, error) {
+func (r *LibraryRepository) GetAllTracks(ctx context.Context) ([]TrackSummary, error) {
 	tracks := []TrackSummary{}
-	tx, err := r.db.Begin()
-	if err != nil {
-		return []TrackSummary{}, fmt.Errorf("transaction begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	rows, err := tx.Query(`
+	err := r.RunAsTx(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, `
 		SELECT id, title, artist, album, album_id, track_num
 		FROM tracks
 	`)
-	if err != nil {
-		return []TrackSummary{}, fmt.Errorf("bulk select tracks: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		tr := TrackSummary{}
-		err = rows.Scan(
-			&tr.ID, &tr.Title,
-			&tr.Artist, &tr.Album,
-			&tr.AlbumID, &tr.TrackNum,
-		)
 		if err != nil {
-			return []TrackSummary{}, fmt.Errorf("row scan err: %w", err)
+			return fmt.Errorf("bulk select tracks: %w", err)
 		}
+		defer rows.Close()
 
-		tracks = append(tracks, tr)
-	}
-	if err := rows.Err(); err != nil {
-		return []TrackSummary{}, fmt.Errorf("row iteration err: %w", err)
-	}
+		for rows.Next() {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 
-	return tracks, tx.Commit()
+			tr := TrackSummary{}
+			err = rows.Scan(
+				&tr.ID, &tr.Title,
+				&tr.Artist, &tr.Album,
+				&tr.AlbumID, &tr.TrackNum,
+			)
+			if err != nil {
+				return fmt.Errorf("row scan err: %w", err)
+			}
+
+			tracks = append(tracks, tr)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("row iteration err: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return []TrackSummary{}, fmt.Errorf("get tracks: %w", err)
+	}
+	return tracks, nil
 }
 
-func (r *LibraryRepository) ImportLibrary(rootPath string) error {
-	err := r.RunAsTx(createSchema)
+func (r *LibraryRepository) ImportLibrary(ctx context.Context, rootPath string) error {
+	err := r.createSchema(ctx)
 	if err != nil {
 		return fmt.Errorf("create schema: %w", err)
 	}
@@ -311,12 +326,13 @@ func (r *LibraryRepository) ImportLibrary(rootPath string) error {
 	return FullScan(rootPath, r.saveScannedTrack)
 }
 
-func (r *LibraryRepository) Sync(rootPath string) error {
-	cachedTracks, err := r.getTracksFSInfo()
+func (r *LibraryRepository) Sync(ctx context.Context, rootPath string) error {
+	cachedTracks, err := r.getTracksFSInfo(ctx)
 	if err != nil {
 		return err
 	}
 
+	// TODO: context
 	return SyncScan(
 		rootPath,
 		cachedTracks,
@@ -325,8 +341,8 @@ func (r *LibraryRepository) Sync(rootPath string) error {
 	)
 }
 
-func (r *LibraryRepository) RunAsTx(fn func(tx *sql.Tx) error) error {
-	tx, err := r.db.Begin()
+func (r *LibraryRepository) RunAsTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("transaction start: %w", err)
 	}
@@ -345,7 +361,7 @@ type SearchResults struct {
 	Albums []AlbumSummary `json:"albums"`
 }
 
-func (r *LibraryRepository) Search(query string) (SearchResults, error) {
+func (r *LibraryRepository) Search(ctx context.Context, query string) (SearchResults, error) {
 	results := SearchResults{
 		Tracks: make([]TrackSummary, 0),
 		Albums: make([]AlbumSummary, 0),
@@ -364,8 +380,8 @@ func (r *LibraryRepository) Search(query string) (SearchResults, error) {
 	).Replace(query)
 	pattern := "%" + escaped + "%"
 
-	err := r.RunAsTx(func(tx *sql.Tx) error {
-		trackRows, err := tx.Query(`
+	err := r.RunAsTx(ctx, func(tx *sql.Tx) error {
+		trackRows, err := tx.QueryContext(ctx, `
 			SELECT
 				id, title, artist,
 				album, album_id, track_num
@@ -383,6 +399,10 @@ func (r *LibraryRepository) Search(query string) (SearchResults, error) {
 		defer trackRows.Close()
 
 		for trackRows.Next() {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
 			var track TrackSummary
 			if err := trackRows.Scan(
 				&track.ID, &track.Title,
@@ -397,7 +417,7 @@ func (r *LibraryRepository) Search(query string) (SearchResults, error) {
 			return fmt.Errorf("iterate tracks: %w", err)
 		}
 
-		albumRows, err := tx.Query(`
+		albumRows, err := tx.QueryContext(ctx, `
 			SELECT
 				id, title, album_artist
 			FROM albums
@@ -412,6 +432,10 @@ func (r *LibraryRepository) Search(query string) (SearchResults, error) {
 		defer albumRows.Close()
 
 		for albumRows.Next() {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
 			var album AlbumSummary
 			if err := albumRows.Scan(
 				&album.ID, &album.Title, &album.AlbumArtist,
@@ -433,10 +457,10 @@ func (r *LibraryRepository) Search(query string) (SearchResults, error) {
 	return results, nil
 }
 
-func (r *LibraryRepository) getTracksFSInfo() ([]TrackFSInfo, error) {
+func (r *LibraryRepository) getTracksFSInfo(ctx context.Context) ([]TrackFSInfo, error) {
 	// Select a len of tracks and allocate slice cap
 	tracks := []TrackFSInfo{}
-	rows, err := r.db.Query(`
+	rows, err := r.db.QueryContext(ctx, `
 		SELECT path, mtime, size
 		FROM tracks
 	`)
@@ -447,6 +471,10 @@ func (r *LibraryRepository) getTracksFSInfo() ([]TrackFSInfo, error) {
 
 	var mtime int64
 	for rows.Next() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		tr := TrackFSInfo{}
 		err = rows.Scan(&tr.Path, &mtime, &tr.Size)
 		if err != nil {
@@ -468,16 +496,17 @@ func (r *LibraryRepository) getTracksFSInfo() ([]TrackFSInfo, error) {
 func (r *LibraryRepository) saveScannedTrack(track Track) error {
 	var albumID uint16
 	var created bool
-	err := r.RunAsTx(func(tx *sql.Tx) error {
+	ctx := context.Background() // TODO: reconsider
+	err := r.RunAsTx(ctx, func(tx *sql.Tx) error {
 		var err error
-		albumID, created, err = getOrCreateAlbum(tx, track)
+		albumID, created, err = getOrCreateAlbum(ctx, tx, track)
 		if err != nil {
 			return err
 		}
 
 		track.Metadata.AlbumID = albumID
 
-		_, err = tx.Exec(upsertTrackSQL,
+		_, err = tx.ExecContext(ctx, upsertTrackSQL,
 			track.Metadata.Title, track.Metadata.Artist,
 			track.Metadata.Album, track.Metadata.AlbumArtist,
 			track.Metadata.TrackNum, track.Metadata.Year,
@@ -491,7 +520,7 @@ func (r *LibraryRepository) saveScannedTrack(track Track) error {
 		return err
 	}
 
-	if created {
+	if created && r.coverCache != nil {
 		if err := r.coverCache.CacheAlbumCover(
 			track.FSInfo.Path, albumID,
 		); err != nil {
@@ -507,9 +536,9 @@ func (r *LibraryRepository) deleteTrackByPath(path string) error {
 	return err
 }
 
-func getOrCreateAlbum(tx *sql.Tx, track Track) (uint16, bool, error) {
+func getOrCreateAlbum(ctx context.Context, tx *sql.Tx, track Track) (uint16, bool, error) {
 	var id uint16
-	err := tx.QueryRow(`
+	err := tx.QueryRowContext(ctx, `
 		SELECT id
 		FROM albums
 		WHERE title = ?
@@ -521,7 +550,7 @@ func getOrCreateAlbum(tx *sql.Tx, track Track) (uint16, bool, error) {
 		return id, false, err
 	}
 
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO albums(title, album_artist)
 		VALUES (?, ?)
 		RETURNING id

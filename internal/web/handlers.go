@@ -43,7 +43,7 @@ func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track, err := s.repo.GetTrackByID(uint16(id))
+	track, err := s.repo.GetTrackByID(r.Context(), uint16(id))
 	if err != nil {
 		clog.Infof("404 Response for track #%d. %s", id, err)
 		http.NotFound(w, r)
@@ -63,7 +63,7 @@ func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {
 func (s *MusicServer) tracksAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	tracks, err := s.repo.GetAllTracks()
+	tracks, err := s.repo.GetAllTracks(r.Context())
 	if err != nil {
 		clog.Errorf("get album list json: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func (s *MusicServer) tracksAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *MusicServer) tracksPage(w http.ResponseWriter, r *http.Request) {
-	tracks, err := s.repo.GetAllTracks()
+	tracks, err := s.repo.GetAllTracks(r.Context())
 	if err != nil {
 		clog.Errorf("get track list json: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -111,7 +111,7 @@ func (s *MusicServer) coverImage(w http.ResponseWriter, r *http.Request) {
 func (s *MusicServer) albumsAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	albums, err := s.repo.GetAlbums()
+	albums, err := s.repo.GetAlbums(r.Context())
 	if err != nil {
 		clog.Errorf("get album list json: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -132,7 +132,7 @@ func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albums, err := s.repo.GetAlbumByID(uint16(id))
+	albums, err := s.repo.GetAlbumByID(r.Context(), uint16(id))
 	if errors.Is(err, library.ErrAlbumNotFound) {
 		http.NotFound(w, r)
 		return
@@ -152,7 +152,7 @@ func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *MusicServer) albumsPage(w http.ResponseWriter, r *http.Request) {
-	albums, err := s.repo.GetAlbums()
+	albums, err := s.repo.GetAlbums(r.Context())
 	if err != nil {
 		clog.Errorf("get albums from repo fail: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -175,7 +175,7 @@ func (s *MusicServer) albumPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	album, err := s.repo.GetAlbumByID(uint16(id))
+	album, err := s.repo.GetAlbumByID(r.Context(), uint16(id))
 	if errors.Is(err, library.ErrAlbumNotFound) {
 		http.NotFound(w, r)
 		return
@@ -197,7 +197,7 @@ func (s *MusicServer) downloadTrackAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track, err := s.repo.GetTrackByID(uint16(id))
+	track, err := s.repo.GetTrackByID(r.Context(), uint16(id))
 	if err != nil {
 		clog.Errorf("get track: %s", err)
 		http.NotFound(w, r)
@@ -215,7 +215,7 @@ func (s *MusicServer) searchAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := s.repo.Search(query)
+	results, err := s.repo.Search(r.Context(), query)
 	if err != nil {
 		clog.Errorf("search library: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -71,9 +72,10 @@ func main() {
 	}
 
 	needsImport := libraryRepo.NeedsImport()
+	ctx := context.Background() // TODO: reconsider
 	if needsImport {
 		clog.Info("library not present, starting full scan")
-		if err := libraryRepo.ImportLibrary(conf.Dir); err != nil {
+		if err := libraryRepo.ImportLibrary(ctx, conf.Dir); err != nil {
 			clog.Fatalf("library import failed: %v", err)
 		}
 		clog.Info("full scan completed")
@@ -81,7 +83,7 @@ func main() {
 		go func() {
 			clog.Info("starting library sync")
 
-			if err := libraryRepo.Sync(conf.Dir); err != nil {
+			if err := libraryRepo.Sync(ctx, conf.Dir); err != nil {
 				clog.Errorf("library sync failed: %v", err)
 				return
 			}

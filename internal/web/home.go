@@ -25,7 +25,7 @@ func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
 	nowTimestamp := time.Now()
 
 	hpd := homePageData{}
-	albums, err := s.repo.GetAlbums()
+	albums, err := s.repo.GetAlbums(r.Context())
 	if err != nil {
 		clog.Errorf("get albums from repo: %s", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -37,7 +37,7 @@ func (s *MusicServer) homePage(w http.ResponseWriter, r *http.Request) {
 		hpd.Featured, hpd.Albums = &albumPicks[0], albumPicks[1:]
 	}
 
-	tracks, err := s.repo.GetAllTracks()
+	tracks, err := s.repo.GetAllTracks(r.Context())
 	if err != nil {
 		clog.Errorf("get tracks from repo: %s", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

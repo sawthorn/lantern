@@ -64,7 +64,6 @@ func main() {
 
 	// init library
 	libraryRepo, err := library.NewLibraryRepository(
-		library.WithDBPath(conf.DBPath),
 		library.WithCoverCache(coverCache),
 	)
 	if err != nil {

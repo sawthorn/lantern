@@ -59,6 +59,10 @@ func NewLibraryRepository(opts ...LibraryRepositoryOption) (*LibraryRepository, 
 		return nil, errEmptyDBPath
 	}
 
+	if err := os.MkdirAll(filepath.Dir(r.dbPath), 0750); err != nil {
+		return nil, fmt.Errorf("create db parent dir: %w", err)
+	}
+
 	r.db, err = sql.Open("sqlite", r.dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open db connection: %w", err)
@@ -69,7 +73,7 @@ func NewLibraryRepository(opts ...LibraryRepositoryOption) (*LibraryRepository, 
 
 func WithDBPath(path string) LibraryRepositoryOption {
 	return func(r *LibraryRepository) {
-		r.dbPath = path
+		r.dbPath = filepath.Join(path, "library.db")
 	}
 }
 
@@ -85,7 +89,7 @@ func defaultDBPath() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(cacheDir, ".local/share/lantern"), nil
+	return filepath.Join(cacheDir, ".local/share/lantern/library.db"), nil
 }
 
 func (r *LibraryRepository) NeedsImport() bool {

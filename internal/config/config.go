@@ -13,12 +13,9 @@ import (
 	clog "github.com/charmbracelet/log"
 )
 
-const DBPATH = "./library.db"
-
 type Config struct {
-	Dir    string `json:"dir"`
-	Port   int    `json:"port"`
-	DBPath string `json:"db_path"`
+	Dir  string `json:"dir"`
+	Port int    `json:"port"`
 }
 
 func configPath() (string, error) {
@@ -143,7 +140,6 @@ func interactiveConfigFill() (Config, error) {
 
 	conf.Dir = dir
 	conf.Port, _ = strconv.Atoi(port) // port is valid in form
-	conf.DBPath = DBPATH
 
 	return conf, nil
 }

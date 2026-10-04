@@ -7,13 +7,14 @@ import (
 
 	"github.com/sawthorn/lantern/internal/config"
 	"github.com/sawthorn/lantern/internal/library"
+	"github.com/sawthorn/lantern/internal/library/repository"
 	"github.com/sawthorn/lantern/internal/web/middleware"
 
 	clog "github.com/charmbracelet/log"
 )
 
 type MusicServer struct {
-	repo        *library.LibraryRepository
+	repo        *repository.LibraryRepository
 	coverCache  *library.CoverCache
 	Conf        *config.Config
 	staticFiles fs.FS
@@ -21,7 +22,7 @@ type MusicServer struct {
 }
 
 func NewServer(
-	repo *library.LibraryRepository,
+	repo *repository.LibraryRepository,
 	coverCache *library.CoverCache,
 	c *config.Config,
 	staticFiles fs.FS,

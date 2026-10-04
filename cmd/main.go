@@ -12,6 +12,7 @@ import (
 	clog "github.com/charmbracelet/log"
 	"github.com/sawthorn/lantern/internal/config"
 	"github.com/sawthorn/lantern/internal/library"
+	"github.com/sawthorn/lantern/internal/library/repository"
 	"github.com/sawthorn/lantern/internal/web"
 )
 
@@ -64,8 +65,8 @@ func main() {
 	}
 
 	// init library
-	libraryRepo, err := library.NewLibraryRepository(
-		library.WithCoverCache(coverCache),
+	libraryRepo, err := repository.NewLibraryRepository(
+		repository.WithCoverCache(coverCache),
 	)
 	if err != nil {
 		clog.Fatalf("library repo init failed: %v", err)

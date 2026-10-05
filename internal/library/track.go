@@ -37,12 +37,12 @@ type TrackFSInfo struct {
 
 // TrackSummary represents a compact view of track's crucial metadata.
 type TrackSummary struct {
-	ID       uint16 `json:"id"`
-	Title    string `json:"title"`
-	Artist   string `json:"artist"`
-	Album    string `json:"album"`
-	AlbumID  uint16 `json:"album_id,omitempty"`
-	TrackNum uint16 `json:"track"`
+	ID       uint16  `json:"id"`
+	Title    *string `json:"title"`
+	Artist   *string `json:"artist"`
+	Album    *string `json:"album"`
+	AlbumID  uint16  `json:"album_id,omitempty"`
+	TrackNum *uint16 `json:"track"`
 }
 
 func (a TrackSummary) RankID() uint16 {

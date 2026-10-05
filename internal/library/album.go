@@ -1,11 +1,11 @@
 package library
 
 type Album struct {
-	ID          uint16 `json:"id"`
-	Year        uint16 `json:"year"`
-	Title       string `json:"title"`
-	AlbumArtist string `json:"artist"`
-	TotalTracks uint16 `json:"total_tracks"`
+	ID          uint16  `json:"id"`
+	Year        *uint16 `json:"year"`
+	Title       *string `json:"title"`
+	AlbumArtist *string `json:"artist"`
+	TotalTracks uint16  `json:"total_tracks"`
 }
 
 type AlbumDetails struct {

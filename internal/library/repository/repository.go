@@ -51,9 +51,9 @@ func NewLibraryRepository(opts ...LibraryRepositoryOption) (*LibraryRepository, 
 	return r, nil
 }
 
-func WithDBPath(path string) LibraryRepositoryOption {
+func WithDBDir(dir string) LibraryRepositoryOption {
 	return func(r *LibraryRepository) {
-		r.dbPath = filepath.Join(path, "library.db")
+		r.dbPath = filepath.Join(dir, "library.db")
 	}
 }
 

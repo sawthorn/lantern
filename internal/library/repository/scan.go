@@ -30,11 +30,6 @@ const upsertTrackSQL = `INSERT INTO tracks (
 	`
 
 func (r *LibraryRepository) ImportLibrary(ctx context.Context, rootPath string) error {
-	err := r.createSchema(ctx)
-	if err != nil {
-		return fmt.Errorf("create schema: %w", err)
-	}
-
 	return library.FullScan(rootPath, r.saveScannedTrack)
 }
 

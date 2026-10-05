@@ -72,6 +72,14 @@ func defaultDBPath() (string, error) {
 	return filepath.Join(cacheDir, ".local/share/lantern/library.db"), nil
 }
 
+func (r *LibraryRepository) Init(ctx context.Context) error {
+	err := r.createSchema(ctx)
+	if err != nil {
+		return fmt.Errorf("create schema: %w", err)
+	}
+	return nil
+}
+
 func (r *LibraryRepository) NeedsImport() bool {
 	_, err := os.Stat(r.dbPath)
 	if errors.Is(err, os.ErrNotExist) {

@@ -16,11 +16,12 @@ func (r *LibraryRepository) GetAlbumByID(ctx context.Context, id uint16) (librar
 		SELECT
 			a.id, a.title,
 			a.album_artist,
-			MIN(year) AS year,
-			COUNT(*) AS total_tracks
+			MIN(t.year) AS year,
+			COUNT(t.id) AS total_tracks
 		FROM albums a
 		LEFT JOIN tracks t ON a.id = t.album_id
 		WHERE a.id = ?
+		GROUP BY a.id
 	`, id).Scan(&album.ID, &album.Title, &album.AlbumArtist, &album.Year, &album.TotalTracks)
 		if errors.Is(err, sql.ErrNoRows) {
 			return library.ErrAlbumNotFound

@@ -69,6 +69,11 @@ func main() {
 		repository.WithCoverCache(coverCache),
 	)
 	if err != nil {
+		clog.Fatalf("library repo creation failed: %v", err)
+	}
+
+	err = libraryRepo.Init(context.Background())
+	if err != nil {
 		clog.Fatalf("library repo init failed: %v", err)
 	}
 

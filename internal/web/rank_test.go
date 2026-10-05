@@ -94,9 +94,10 @@ func mockAlbums(count int) []library.Album {
 	albums := make([]library.Album, count)
 
 	for i := range count {
+		title := fmt.Sprintf("Album %d", i+1)
 		albums[i] = library.Album{
 			ID:    uint16(i + 1),
-			Title: fmt.Sprintf("Album %d", i+1),
+			Title: &title,
 		}
 	}
 

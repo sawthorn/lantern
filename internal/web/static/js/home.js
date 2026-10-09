@@ -1,5 +1,5 @@
 const root = document.getElementById('homepage');
-if (!root || root.dataset.initialized) {
+if (root || !root.dataset.initialized) {
   root.dataset.initialized = 'true';
   const $ = selector => root.querySelector(selector);
 

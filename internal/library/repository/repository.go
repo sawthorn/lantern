@@ -102,7 +102,7 @@ func (r *LibraryRepository) createSchema(ctx context.Context) error {
 		}
 
 		_, err = tx.ExecContext(ctx, `
-	CREATE UNIQUE INDEX idx_album_unique
+	CREATE UNIQUE INDEX IF NOT EXISTS idx_album_unique
 	ON albums(title, album_artist);
 	`)
 		if err != nil {

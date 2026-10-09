@@ -35,7 +35,7 @@ func TestGetAlbumByID_TracksExist(t *testing.T) {
 	assert.Equal(t, "Artist 2", *album.AlbumArtist)
 	assert.Len(t, album.Tracks, 10)
 	for _, tr := range album.Tracks {
-		assert.Equal(t, uint16(2), tr.AlbumID)
+		assert.Equal(t, uint16(2), *tr.AlbumID)
 	}
 }
 

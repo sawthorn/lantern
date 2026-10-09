@@ -164,14 +164,20 @@ func parseTrack(path string, entry os.DirEntry) (Track, error) {
 		return Track{}, fmt.Errorf("tag reading: %w", err)
 	}
 
+	title := firstInTag(m, taglib.Title)
+	artist := firstInTag(m, taglib.Artist)
+	album := firstInTag(m, taglib.Album)
+	albumArtist := extractAlbumArtist(m)
+	trackNum := extractTrackNum(m)
+	year := extractYear(m)
 	res := Track{
 		Metadata: TrackMetadata{
-			Title:       firstInTag(m, taglib.Title),
-			Artist:      firstInTag(m, taglib.Artist),
-			Album:       firstInTag(m, taglib.Album),
-			AlbumArtist: extractAlbumArtist(m),
-			TrackNum:    extractTrackNum(m),
-			Year:        extractYear(m),
+			Title:       &title,
+			Artist:      &artist,
+			Album:       &album,
+			AlbumArtist: &albumArtist,
+			TrackNum:    &trackNum,
+			Year:        &year,
 		},
 		FSInfo: TrackFSInfo{
 			Path:     path,

@@ -18,16 +18,17 @@ type Track struct {
 }
 
 type TrackMetadata struct {
-	Title       string      `json:"title"`
-	Artist      string      `json:"artist"`
-	Album       string      `json:"album"`
-	AlbumArtist string      `json:"album_artist"`
-	TrackNum    uint16      `json:"track"`
-	Year        uint16      `json:"-"`
+	Title       *string     `json:"title"`
+	Artist      *string     `json:"artist"`
+	Album       *string     `json:"album"`
+	AlbumArtist *string     `json:"album_artist"`
+	TrackNum    *uint16     `json:"track"`
+	Year        *uint16     `json:"-"`
 	Cover       *AlbumCover `json:"-"`
-	AlbumID     uint16      `json:"album_id,omitempty"`
+	AlbumID     *uint16     `json:"album_id,omitempty"`
 }
 
+// TrackFSInfo represents information derived from track's presence in the FS.
 type TrackFSInfo struct {
 	Path     string    `json:"path"`
 	Filename string    `json:"filename"`
@@ -41,7 +42,7 @@ type TrackSummary struct {
 	Title    *string `json:"title"`
 	Artist   *string `json:"artist"`
 	Album    *string `json:"album"`
-	AlbumID  uint16  `json:"album_id,omitempty"`
+	AlbumID  *uint16 `json:"album_id,omitempty"`
 	TrackNum *uint16 `json:"track"`
 }
 

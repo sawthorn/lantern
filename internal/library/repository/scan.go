@@ -95,7 +95,7 @@ func (r *LibraryRepository) saveScannedTrack(track library.Track) error {
 			return err
 		}
 
-		track.Metadata.AlbumID = albumID
+		track.Metadata.AlbumID = &albumID
 
 		_, err = tx.ExecContext(ctx, upsertTrackSQL,
 			track.Metadata.Title, track.Metadata.Artist,
@@ -115,7 +115,7 @@ func (r *LibraryRepository) saveScannedTrack(track library.Track) error {
 		if err := r.coverCache.CacheAlbumCover(
 			track.FSInfo.Path, albumID,
 		); err != nil {
-			clog.Warnf("cache album cover %s: %v", track.Metadata.Album, err)
+			clog.Warnf("cache album cover %s: %v", *track.Metadata.Album, err)
 		}
 	}
 

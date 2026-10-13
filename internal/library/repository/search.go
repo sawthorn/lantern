@@ -9,6 +9,8 @@ import (
 	"github.com/sawthorn/lantern/internal/library"
 )
 
+const searchLimit = 25
+
 type SearchResults struct {
 	Tracks []library.TrackSummary `json:"tracks"`
 	Albums []library.AlbumSummary `json:"albums"`

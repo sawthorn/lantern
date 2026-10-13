@@ -12,8 +12,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const searchLimit = 25
-
 type LibraryRepository struct {
 	db         *sql.DB
 	dbPath     string

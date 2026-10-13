@@ -14,9 +14,9 @@ type AlbumDetails struct {
 }
 
 type AlbumSummary struct {
-	ID          uint16 `json:"id"`
-	Title       string `json:"title"`
-	AlbumArtist string `json:"artist"`
+	ID          uint16  `json:"id"`
+	Title       *string `json:"title"`
+	AlbumArtist *string `json:"artist"`
 }
 
 func (a Album) RankID() uint16 {

@@ -109,7 +109,12 @@ func TestGetAlbums_CancelledContext(t *testing.T) {
 func seedAlbums(t *testing.T, count int, repo *LibraryRepository) {
 	t.Helper()
 
-	for i := range count {
+	var max_ind int
+	row := repo.db.QueryRow(`SELECT COALESCE(MAX(id), 0) FROM albums`)
+	err := row.Scan(&max_ind)
+	require.NoError(t, err)
+
+	for i := max_ind + 1; i <= max_ind+count; i++ {
 		_, err := repo.db.Exec(`
 		INSERT INTO albums(id, title, album_artist)
 		VALUES(?1, ?2, ?3)

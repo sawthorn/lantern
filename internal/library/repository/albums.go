@@ -24,7 +24,7 @@ func (r *LibraryRepository) GetAlbumByID(ctx context.Context, id uint16) (librar
 		GROUP BY a.id
 	`, id).Scan(&album.ID, &album.Title, &album.AlbumArtist, &album.Year, &album.TotalTracks)
 		if errors.Is(err, sql.ErrNoRows) {
-			return library.ErrAlbumNotFound
+			return ErrAlbumNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("album query: %w", err)

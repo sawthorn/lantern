@@ -31,7 +31,7 @@ func (r *LibraryRepository) GetTrackByID(ctx context.Context, id uint16) (librar
 		&res.FSInfo.Path,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return library.Track{}, library.ErrTrackNotFound
+		return library.Track{}, ErrTrackNotFound
 	}
 	if err != nil {
 		return library.Track{}, fmt.Errorf("get track: %w", err)

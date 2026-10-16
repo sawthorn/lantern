@@ -1,4 +1,4 @@
-package library
+package repository
 
 import "errors"
 

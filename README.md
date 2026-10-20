@@ -1,38 +1,26 @@
-<h1 align="center">🏮 Lantern</h1>
+<h1 align="center">Lantern</h1>
 
 <p align="center">
   <b>A lightweight LAN music streaming server written in Go.</b>
 </p>
 
 <p align="center">
-Stream your personal music library from one machine to any device on your network — phone, laptop, TV, or a friend’s browser — instantly, with zero setup headaches.
+Stream your personal music library from one machine to any device on your network.
 </p>
-
-## Problem
-
-Lantern comes from personal ick. Modern music streaming services are often inconvenient - subscriptions, licensing, region locks, internet connection dependency, etc.
-
-So for some people it is more appealing to collect and store their favorite albums locally as files.
-
-**Here comes the problem - your library lives only on one device.**
-
-If you want to browse your lib on any other device you simply have to sync them - that means double or triple the storage.
-
-What Lantern does is it turns your collection into a personal streaming server accessible anywhere on LAN.
 
 ## Quick Start
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/lantern.git
+git clone https://github.com/sawthorn/lantern.git
 cd lantern
 ````
 
 ### 2. Build
 
 ```bash
-go build -o lantern
+go build -o lantern cmd/main.go
 ```
 
 *You can specify GOOS and GOARCH to build it for different devices.*
@@ -100,19 +88,20 @@ Use the built-in QR code to open it instantly on mobile.
 
 ## Features
 
-  - Local music streaming over HTTP (LAN)
-  - Minimal server-rendered web UI
-  - Recursive folder scanning
-  - QR code sharing for instant access on mobile devices
-  - LAN-open access (no authentication by design)
-  - Supports common audio formats:
-      - MP3
-      - FLAC
-      - WAV
-      - OGG
-  - Simple JSON configuration
+- Local music streaming over HTTP (LAN)
+- Minimal server-rendered web UI
+- Recursive folder scanning
+- QR code sharing for instant access on mobile devices
+- LAN-open access (no authentication by design)
+- Supports common audio formats:
+  - MP3
+  - FLAC
+  - WAV
+  - OGG
+- Simple JSON configuration
   
 ## Tech stack
+
 - Go
 - go-taglib (metadata extraction)
 - modernc/sqlite (SQLite driver for local persistence)

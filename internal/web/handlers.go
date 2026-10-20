@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	clog "github.com/charmbracelet/log"
-	"github.com/sawthorn/lantern/internal/library"
+	"github.com/sawthorn/lantern/internal/library/repository"
 )
 
 func SetUpRouting(s *MusicServer) *http.ServeMux {
@@ -44,9 +44,13 @@ func (s *MusicServer) streamTrackAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	track, err := s.repo.GetTrackByID(r.Context(), uint16(id))
-	if err != nil {
-		clog.Infof("404 Response for track #%d. %s", id, err)
+	if errors.Is(err, repository.ErrTrackNotFound) {
 		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		clog.Errorf("stream err for track #%d. %s", id, err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -133,7 +137,7 @@ func (s *MusicServer) albumAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	albums, err := s.repo.GetAlbumByID(r.Context(), uint16(id))
-	if errors.Is(err, library.ErrAlbumNotFound) {
+	if errors.Is(err, repository.ErrAlbumNotFound) {
 		http.NotFound(w, r)
 		return
 	}
@@ -176,7 +180,7 @@ func (s *MusicServer) albumPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	album, err := s.repo.GetAlbumByID(r.Context(), uint16(id))
-	if errors.Is(err, library.ErrAlbumNotFound) {
+	if errors.Is(err, repository.ErrAlbumNotFound) {
 		http.NotFound(w, r)
 		return
 	}
